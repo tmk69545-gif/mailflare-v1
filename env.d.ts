@@ -46,6 +46,14 @@ interface CloudflareEnv {
 	SPAM_DOMAIN_AGE_CHECK?: string;
 	AGENT_RATE_LIMIT?: RateLimit;
 	/**
+	 * Telegram storage. When TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set,
+	 * Telegram document storage replaces the R2 binding for raw mail, attachments, Drive,
+	 * avatars, branding and backups.
+	 */
+	TELEGRAM_BOT_TOKEN?: string;
+	TELEGRAM_CHAT_ID?: string;
+	TELEGRAM_API_ROOT?: string;
+	/**
 	 * Backblaze B2 storage. When all four are set, B2 replaces the R2 binding for raw mail, attachments, Drive,
 	 * avatars, branding and backups. B2_ENDPOINT is the S3-compatible host, e.g. s3.us-west-004.backblazeb2.com.
 	 */
@@ -61,6 +69,7 @@ interface CloudflareEnv {
 	S3_REGION?: string;
 	S3_ACCESS_KEY_ID?: string;
 	S3_SECRET_ACCESS_KEY?: string;
+	S3_ENDPOINT?: string;
 	CF_TOKEN?: string;
 	CF_API_KEY?: string;
 	CF_EMAIL?: string;

@@ -46,7 +46,7 @@ Want to support Mailflare? [Become a sponsor](https://store.paymug.co/buy/mailfl
 ### Technical
 
 - **Databases**: Cloudflare D1 (default), PostgreSQL, MySQL, Turso / libSQL, or a local SQLite file. Set `DATABASE_URL` to switch. Works with Supabase, Neon, PlanetScale, TiDB and more. See [Databases](docs/databases.md).
-- **File storage**: Cloudflare R2, Backblaze B2 or AWS S3.
+- **File storage**: Telegram (free unlimited storage via Bot API), Cloudflare R2, Backblaze B2 or AWS S3.
 - **Hosting**: Cloudflare Workers or a single Docker container.
 - **Admin**: Users, API keys, webhooks, audit logs and backups.
 - **Import**: Bring in mail from IMAP, Gmail Takeout, `.eml` and `.mbox` files.

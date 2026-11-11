@@ -9,8 +9,14 @@ export type B2Config = {
 	region: string;
 };
 
+export type TelegramConfig = {
+	botToken: string;
+	chatId: string;
+	apiRoot?: string;
+};
+
 export type StorageStatus = {
-	provider: "backblaze" | "s3" | "r2" | "files";
+	provider: "telegram" | "backblaze" | "s3" | "r2" | "files";
 	configured: boolean;
 	bucket: string | null;
 	endpoint: string | null;

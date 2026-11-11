@@ -1,7 +1,17 @@
-import type { B2Config, StorageStatus } from "@/lib/storage/b2-types";
+import type { B2Config, StorageStatus, TelegramConfig } from "@/lib/storage/b2-types";
 
 type B2Env = Partial<Pick<CloudflareEnv, "B2_KEY_ID" | "B2_APPLICATION_KEY" | "B2_BUCKET" | "B2_ENDPOINT" | "S3_BUCKET" | "S3_REGION" | "S3_ACCESS_KEY_ID" | "S3_SECRET_ACCESS_KEY" | "MAILFLARE_RUNTIME">> &
-	Partial<Record<"AWS_ACCESS_KEY_ID" | "AWS_SECRET_ACCESS_KEY" | "AWS_REGION" | "AWS_DEFAULT_REGION", string>>;
+	Partial<Record<"AWS_ACCESS_KEY_ID" | "AWS_SECRET_ACCESS_KEY" | "AWS_REGION" | "AWS_DEFAULT_REGION" | "TELEGRAM_BOT_TOKEN" | "TELEGRAM_STORAGE_TOKEN" | "TELEGRAM_TOKEN" | "TELEGRAM_CHAT_ID" | "TELEGRAM_STORAGE_CHAT_ID" | "TELEGRAM_CHANNEL_ID" | "TELEGRAM_API_ROOT" | "S3_ENDPOINT", string>>;
+
+export type { TelegramConfig };
+
+export function getTelegramConfig(env: B2Env): TelegramConfig | null {
+	const botToken = (env.TELEGRAM_BOT_TOKEN ?? env.TELEGRAM_STORAGE_TOKEN ?? env.TELEGRAM_TOKEN)?.trim();
+	const chatId = (env.TELEGRAM_CHAT_ID ?? env.TELEGRAM_STORAGE_CHAT_ID ?? env.TELEGRAM_CHANNEL_ID)?.trim();
+	const apiRoot = env.TELEGRAM_API_ROOT?.trim() || "https://api.telegram.org";
+	if (!botToken || !chatId) return null;
+	return { botToken, chatId, apiRoot: apiRoot.replace(/\/+$/, "") };
+}
 
 const ENDPOINT_PATTERN = /^s3\.([a-z0-9-]+)\.backblazeb2\.com$/;
 
@@ -37,10 +47,13 @@ const S3_REGION_PATTERN = /^[a-z]{2}(-gov|-iso[a-z]?)?-[a-z]+-\d$/;
  */
 export function getS3Config(env: B2Env): B2Config | null {
 	const bucket = env.S3_BUCKET?.trim();
-	const region = (env.S3_REGION ?? env.AWS_REGION ?? env.AWS_DEFAULT_REGION)?.trim();
+	const customEndpoint = env.S3_ENDPOINT ? normalizeB2Endpoint(env.S3_ENDPOINT) : null;
+	const region = (env.S3_REGION ?? env.AWS_REGION ?? env.AWS_DEFAULT_REGION)?.trim() || (customEndpoint ? "us-east-1" : "");
 	const keyId = (env.S3_ACCESS_KEY_ID ?? env.AWS_ACCESS_KEY_ID)?.trim();
 	const applicationKey = (env.S3_SECRET_ACCESS_KEY ?? env.AWS_SECRET_ACCESS_KEY)?.trim();
-	if (!bucket || !region || !keyId || !applicationKey || !S3_REGION_PATTERN.test(region)) return null;
+	if (!bucket || !keyId || !applicationKey) return null;
+	if (customEndpoint) return { keyId, applicationKey, bucket, region: region || "us-east-1", endpoint: customEndpoint };
+	if (!region || !S3_REGION_PATTERN.test(region)) return null;
 	return { keyId, applicationKey, bucket, region, endpoint: `s3.${region}.amazonaws.com` };
 }
 
@@ -53,6 +66,8 @@ export function getObjectStorageConfig(env: B2Env): (B2Config & { provider: "bac
 }
 
 export function getStorageStatus(env: B2Env): StorageStatus {
+	const telegram = getTelegramConfig(env);
+	if (telegram) return { provider: "telegram", configured: true, bucket: telegram.chatId, endpoint: "api.telegram.org" };
 	const configured = getObjectStorageConfig(env);
 	if (configured) return { provider: configured.provider, configured: true, bucket: configured.bucket, endpoint: configured.endpoint };
 	return { provider: env.MAILFLARE_RUNTIME === "node" ? "files" : "r2", configured: true, bucket: null, endpoint: null };
@@ -60,6 +75,13 @@ export function getStorageStatus(env: B2Env): StorageStatus {
 
 /** Names the variables that are set without exposing values, so a half-finished setup can be diagnosed. */
 export function describeB2Problem(env: B2Env): string | null {
+	if (getTelegramConfig(env)) return null;
+	if (env.TELEGRAM_BOT_TOKEN && !env.TELEGRAM_CHAT_ID) {
+		return "Telegram storage needs both TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.";
+	}
+	if (!env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
+		return "Telegram storage needs both TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.";
+	}
 	if (!getB2Config(env) && !(env.B2_KEY_ID || env.B2_APPLICATION_KEY || env.B2_BUCKET || env.B2_ENDPOINT) && env.S3_BUCKET && !getS3Config(env)) {
 		return "AWS S3 needs S3_BUCKET, S3_REGION and credentials (S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY, or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY).";
 	}

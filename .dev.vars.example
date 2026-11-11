@@ -22,6 +22,12 @@ CF_TOKEN=your_api_token_with_zone_email_permissions
 # Receiving through Resend or SES needs a public HTTPS address.
 # APP_URL=https://mail.example.com
 
+# Optional: store raw mail, attachments, Drive files, avatars and backups in Telegram instead of R2.
+# Telegram provides free, unlimited document storage via Bot API.
+# Create a bot via @BotFather to get the token, and add it to your channel/group to get the chat ID.
+# TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ
+# TELEGRAM_CHAT_ID=-1001234567890
+
 # Optional: store raw mail, attachments, Drive files, avatars and backups in Backblaze B2 instead of R2.
 # Set all four. Create an application key restricted to one bucket (read and write files), and use the
 # S3-compatible endpoint shown on the bucket page.
