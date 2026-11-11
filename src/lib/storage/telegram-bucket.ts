@@ -389,3 +389,4 @@ export class TelegramBucket {
 export function openTelegramBucket(config: TelegramConfig, getDb?: () => any): R2Bucket {
 	return new TelegramBucket(config, getDb) as unknown as R2Bucket;
 }
+

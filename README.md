@@ -5,7 +5,7 @@
 
 A self-hosted alternative to Google Workspace. Setup **custom domain Emails**, **Calendar, Drive, Booking** and **built-in AI agents**.
 
-Run it on Cloudflare or Docker. Send and receive with Cloudflare, Resend or Amazon SES. Store files in R2, Backblaze B2 or AWS S3. Use D1, Postgres, MySQL or Turso for the database.
+Run it on Cloudflare or Docker. Send and receive with Cloudflare, Resend or Amazon SES. Store files in Telegram (free unlimited), Cloudflare R2, Backblaze B2 or AWS S3. Use D1, Postgres, MySQL or Turso for the database.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hieunc229/mailflare)
 
@@ -52,6 +52,84 @@ Want to support Mailflare? [Become a sponsor](https://store.paymug.co/buy/mailfl
 - **Import**: Bring in mail from IMAP, Gmail Takeout, `.eml` and `.mbox` files.
 
 Mailflare currently supports 34 languages, including English, Português (Brasil), Português (Portugal), Español, Français, Deutsch, Italiano, Nederlands, Polski, Українська, Русский, Türkçe, 中文（简体）, 日本語, 한국어, Bahasa Indonesia, Bahasa Melayu, Tiếng Việt, ไทย, हिन्दी, বাংলা, मराठी, తెలుగు, தமிழ், ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ, සිංහල, Kiswahili, Hausa, plus العربية, اردو and فارسی (right-to-left).
+
+## 🚀 Telegram Storage Backend (Free Unlimited Storage)
+
+Mailflare features a native **Telegram object storage provider** (`TelegramBucket`), allowing you to use a private Telegram channel or chat as your cloud object storage backend instead of Cloudflare R2, AWS S3, or Backblaze B2.
+
+### 🌟 Key Benefits
+
+- **100% Free with No Credit Card Required**: Cloudflare R2 requires adding a payment method/credit card to activate. Telegram Bot API storage allows you to deploy Mailflare on Cloudflare completely free without needing any billing account or credit card.
+- **Unlimited Capacity**: Telegram imposes no total storage quota on channels or groups. You can store years of incoming mail, raw MIME files (`.eml`), attachments, and Drive files without worrying about storage tiers or costs.
+- **Zero Egress & Bandwidth Fees**: No egress charges or per-request API fees (PUT/GET/DELETE).
+- **Full Privacy & Direct Data Ownership**: All files and attachments are stored directly in your private Telegram channel/group, accessible only by your bot and your account.
+- **Complete R2 / S3 Compatibility**: Fully implements Cloudflare's `R2Bucket` interface:
+  - Streaming uploads & downloads
+  - HTTP byte-range slicing (for audio/video streaming and partial attachment previews)
+  - Multipart upload support
+  - Object metadata and deletion
+- **Fast Edge Caching & D1 Indexing**: Stores object mappings and metadata in Cloudflare D1/SQLite (`_telegram_storage`) with an in-memory cache for ultra-fast edge access.
+
+---
+
+## 🛠️ How to Self-Host with Telegram Storage
+
+### Step 1: Create a Telegram Bot
+
+1. Open Telegram and search for [@BotFather](https://t.me/BotFather).
+2. Send `/newbot`, then enter a display name and a username for your bot.
+3. BotFather will provide an HTTP API token (e.g. `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`). Save this as `TELEGRAM_BOT_TOKEN`.
+
+### Step 2: Create a Storage Channel & Get Chat ID
+
+1. In Telegram, create a new **Private Channel** or **Group** (e.g., `Mailflare Storage`).
+2. Add your bot as an **Administrator** with permission to **Post Messages** (and send documents).
+3. Get the Chat ID of your channel (for private channels, this starts with `-100`, e.g. `-1001234567890`):
+   - Forward a message from your channel to [@userinfobot](https://t.me/userinfobot) or [@JsonDumpBot](https://t.me/JsonDumpBot).
+   - Or post a message in the channel and visit `https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getUpdates` to inspect `"chat":{"id": -100xxxxxxxxxx}`.
+4. Save this ID as `TELEGRAM_CHAT_ID`.
+
+### Step 3: Configure Environment Variables
+
+#### For Cloudflare Workers Deployment
+
+Set the variables as Worker secrets:
+
+```bash
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+# Paste your bot token: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ
+
+npx wrangler secret put TELEGRAM_CHAT_ID
+# Paste your chat/channel ID: -1001234567890
+```
+
+#### For Local Development / Docker
+
+Add them to `.dev.vars` (for local development) or `.env.docker` (for Docker):
+
+```env
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ
+TELEGRAM_CHAT_ID=-1001234567890
+
+# Optional: if using a custom or self-hosted Telegram Bot API server
+# TELEGRAM_API_ROOT=https://api.telegram.org
+```
+
+### Step 4: Deploy & Enjoy Free Storage
+
+1. **Deploy the Worker**:
+   ```bash
+   npm run deploy
+   ```
+   Or run with Docker:
+   ```bash
+   docker compose up -d --build
+   ```
+
+2. Open the app at `/setup` and complete initial onboarding.
+3. Mailflare will automatically route all raw emails, attachments, drive files, and avatars to your Telegram storage channel!
+
+---
 
 ## Cost
 
